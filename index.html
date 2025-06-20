@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sales Cabang AIGOLAII (Firestore Version)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+</head>
+<body class="bg-gray-100 p-4 text-slate-800">
+
+  <h2 class="text-2xl font-bold mb-4 text-center">📊 Sales Cabang AIGOLAII</h2>
+
+  <!-- Form admin -->
+  <div id="adminForm" class="hidden p-4 bg-white shadow rounded mb-4 space-y-2">
+    <h3 class="text-lg font-semibold mb-2">Tambah Data (Admin Mode)</h3>
+    <input type="date" id="tanggal" class="border p-2 w-full" />
+    <select id="cabang" class="border p-2 w-full"></select>
+    <select id="produk" class="border p-2 w-full"></select>
+    <input type="number" id="jumlah" class="border p-2 w-full" placeholder="Jumlah" min="1" />
+    <button onclick="tambahData()" class="bg-blue-500 text-white px-4 py-2 rounded">Tambah Data</button>
+  </div>
+
+  <!-- Filters -->
+  <div class="flex flex-wrap gap-2 mb-4">
+    <label>Cabang:</label>
+    <select id="filterCabang" class="border p-2" onchange="tampilkanData()">
+      <option value="">Semua</option>
+      <option value="Bekasi 1">Bekasi 1</option>
+      <option value="Bekasi 2">Bekasi 2</option>
+      <option value="Bekasi 3">Bekasi 3</option>
+      <option value="Bintaro">Bintaro</option>
+      <option value="BSD">BSD</option>
+      <option value="Cawang">Cawang</option>
+      <option value="Cengkareng">Cengkareng</option>
+      <option value="Garut">Garut</option>
+      <option value="Jogja">Jogja</option>
+      <option value="Padang">Padang</option>
+      <option value="Pondok Gede">Pondok Gede</option>
+      <option value="Sibolga">Sibolga</option>
+      <option value="Cikarang">Cikarang</option>
+      <option value="Cileungsi">Cileungsi</option>
+      <option value="Jaksel">Jaksel</option>
+      <option value="Tele HO">Tele HO</option>
+    </select>
+    <label>Bulan:</label>
+    <input type="month" id="filterBulan" class="border p-2" onchange="tampilkanData()">
+  </div>
+
+  <!-- Total Info -->
+  <div id="totalSummary" class="font-semibold mb-1"></div>
+  <div id="totalAllData" class="font-semibold mb-4 text-blue-600"></div>
+
+  <!-- Table -->
+  <div class="overflow-x-auto">
+    <table id="tabelData" class="min-w-full border border-collapse text-center bg-white shadow rounded">
+      <thead class="bg-blue-100">
+        <tr><th>Tanggal</th><th>Cabang</th><th>Produk</th><th>Jumlah</th><th>Aksi</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- Ranking -->
+  <h3 class="text-xl font-bold mt-8 mb-2">🏆 Peringkat Pencapaian Target</h3>
+  <div class="overflow-x-auto">
+    <table id="tabelRingkasan" class="min-w-full border border-collapse text-center bg-white shadow rounded">
+      <thead class="bg-yellow-100">
+        <tr><th>Ranking</th><th>Cabang</th><th>Total</th><th>Target</th><th>Pencapaian (%)</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    // === Firebase Config Anda ===
+    const firebaseConfig = {
+      apiKey: "API_KEY_ANDA",
+      authDomain: "project-id.firebaseapp.com",
+      projectId: "project-id",
+      storageBucket: "project-id.appspot.com",
+      messagingSenderId: "1234567890",
+      appId: "1:1234567890:web:abcdefgh"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const targetPerCabang = {
+      "Bekasi 1": 55, "Bekasi 2": 55, "Bekasi 3": 55,
+      "Bintaro": 55, "BSD": 55, "Cawang": 55,
+      "Cengkareng": 55, "Garut": 55, "Jogja": 55,
+      "Padang": 55, "Pondok Gede": 55, "Sibolga": 55,
+      "Cikarang": 55, "Cileungsi": 55, "Jaksel": 55,
+      "Tele HO": 55
+    };
+    const produkList = ["KKB Mobil","KSM Motor","Multiguna"];
+
+    // Isi dropdown admin
+    Object.keys(targetPerCabang).forEach(c => {
+      let opt = document.createElement('option'); opt.value = opt.textContent = c;
+      document.getElementById('cabang').appendChild(opt);
+    });
+    produkList.forEach(p => {
+      let opt = document.createElement('option'); opt.value = opt.textContent = p;
+      document.getElementById('produk').appendChild(opt);
+    });
+
+    let data = [];
+
+    async function tampilkanData() {
+      const filterCabang = document.getElementById('filterCabang').value;
+      const filterBulan = document.getElementById('filterBulan').value;
+      let query = db.collection('penjualan');
+      if (filterCabang) query = query.where('cabang','==',filterCabang);
+
+      const snapshot = await query.get();
+      data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const filtered = data.filter(d =>
+        (!filterBulan || d.tanggal.startsWith(filterBulan))
+      );
+
+      // tampil tabel
+      const tbody = document.querySelector('#tabelData tbody'); tbody.innerHTML = '';
+      let totalPenjualan = 0;
+      filtered.forEach(d => {
+        totalPenjualan += d.jumlah;
+        tbody.innerHTML += `<tr>
+          <td>${d.tanggal}</td><td>${d.cabang}</td><td>${d.produk}</td><td>${d.jumlah}</td>
+          <td><button class="text-red-500" onclick="hapusData('${d.id}')">🗑️</button></td>
+        </tr>`;
+      });
+
+      document.getElementById('totalSummary').textContent = "Total Penjualan (Filter): " + totalPenjualan.toLocaleString();
+      const totalSemua = data.reduce((sum,d)=>sum+d.jumlah,0);
+      document.getElementById('totalAllData').textContent = "Total Keseluruhan Semua Cabang: " + totalSemua.toLocaleString();
+
+      tampilkanRingkasan(filtered);
+    }
+
+    async function tambahData() {
+      const tanggal = document.getElementById('tanggal').value;
+      const cabang = document.getElementById('cabang').value;
+      const produk = document.getElementById('produk').value;
+      const jumlah = parseInt(document.getElementById('jumlah').value);
+      if (tanggal && cabang && produk && jumlah>0) {
+        await db.collection('penjualan').add({ tanggal, cabang, produk, jumlah });
+        alert('Data berhasil ditambahkan ✅');
+        document.getElementById('tanggal').value = '';
+        document.getElementById('jumlah').value = '';
+        tampilkanData();
+      } else {
+        alert('Mohon lengkapi semua data.');
+      }
+    }
+
+    async function hapusData(id) {
+      if (confirm('Yakin ingin menghapus data ini?')) {
+        await db.collection('penjualan').doc(id).delete();
+        tampilkanData();
+      }
+    }
+
+    function tampilkanRingkasan(filtered) {
+      const ringkasan = {};
+      filtered.forEach(d => ringkasan[d.cabang] = (ringkasan[d.cabang]||0)+d.jumlah);
+
+      const hasil = Object.keys(ringkasan).map(c => {
+        const target = targetPerCabang[c]||0;
+        const persen = target ? (ringkasan[c]/target)*100 : 0;
+        return { cabang:c, total:ringkasan[c], target, persen };
+      }).sort((a,b)=>b.persen-a.persen);
+
+      const tbody = document.querySelector('#tabelRingkasan tbody'); tbody.innerHTML='';
+      hasil.forEach((h,i)=> {
+        tbody.innerHTML += `<tr>
+          <td>${i+1}</td><td>${h.cabang}</td><td>${h.total}</td><td>${h.target}</td><td>${h.persen.toFixed(2)}%</td>
+        </tr>`;
+      });
+    }
+
+    // Password admin
+    document.addEventListener('keydown',e=>{
+      if(e.ctrlKey && e.shiftKey && e.key==='A'){
+        const pwd = prompt('Masukkan password admin:');
+        if(pwd==='aigolasecret'){
+          document.getElementById('adminForm').classList.remove('hidden');
+          alert('✅ Mode admin aktif');
+        } else { alert('❌ Password salah'); }
+      }
+    });
+
+    tampilkanData();
+  </script>
+</body>
+</html>
