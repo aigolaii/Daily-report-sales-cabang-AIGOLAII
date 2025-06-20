@@ -2,195 +2,217 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <title>Sales Cabang AIGOLAII (Firestore Version)</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Sales Cabang AIGOLAII</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
+
+  <!-- Chart.js dan XLSX -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    input, select, button { margin: 5px; padding: 5px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    canvas { max-width: 100%; margin-top: 30px; }
+    h2, h3 { margin-top: 40px; }
+    .edit-btn, .delete-btn { cursor: pointer; margin: 0 4px; }
+  </style>
 </head>
-<body class="bg-gray-100 p-4 text-slate-800">
+<body>
+  <h2>📊 Sales Cabang AIGOLAII</h2>
 
-  <h2 class="text-2xl font-bold mb-4 text-center">📊 Sales Cabang AIGOLAII</h2>
-
-  <!-- Form admin -->
-  <div id="adminForm" class="hidden p-4 bg-white shadow rounded mb-4 space-y-2">
-    <h3 class="text-lg font-semibold mb-2">Tambah Data (Admin Mode)</h3>
-    <input type="date" id="tanggal" class="border p-2 w-full" />
-    <select id="cabang" class="border p-2 w-full"></select>
-    <select id="produk" class="border p-2 w-full"></select>
-    <input type="number" id="jumlah" class="border p-2 w-full" placeholder="Jumlah" min="1" />
-    <button onclick="tambahData()" class="bg-blue-500 text-white px-4 py-2 rounded">Tambah Data</button>
+  <div id="adminForm" style="display:none;">
+    <input type="date" id="tanggal">
+    <select id="cabang"></select>
+    <select id="produk"></select>
+    <input type="number" id="jumlah" placeholder="Jumlah">
+    <button id="tombolInput" onclick="tambahData()">Tambah Data</button>
   </div>
 
-  <!-- Filters -->
-  <div class="flex flex-wrap gap-2 mb-4">
-    <label>Cabang:</label>
-    <select id="filterCabang" class="border p-2" onchange="tampilkanData()">
+  <div class="filter-bar">
+    <label>Filter Cabang:</label>
+    <select id="filterCabang" onchange="tampilkanData()">
       <option value="">Semua</option>
-      <option value="Bekasi 1">Bekasi 1</option>
-      <option value="Bekasi 2">Bekasi 2</option>
-      <option value="Bekasi 3">Bekasi 3</option>
-      <option value="Bintaro">Bintaro</option>
-      <option value="BSD">BSD</option>
-      <option value="Cawang">Cawang</option>
-      <option value="Cengkareng">Cengkareng</option>
-      <option value="Garut">Garut</option>
-      <option value="Jogja">Jogja</option>
-      <option value="Padang">Padang</option>
-      <option value="Pondok Gede">Pondok Gede</option>
-      <option value="Sibolga">Sibolga</option>
-      <option value="Cikarang">Cikarang</option>
-      <option value="Cileungsi">Cileungsi</option>
-      <option value="Jaksel">Jaksel</option>
-      <option value="Tele HO">Tele HO</option>
+      <option value="Bekasi 1">Bekasi 1</option><option value="Bekasi 2">Bekasi 2</option><option value="Bekasi 3">Bekasi 3</option>
+      <option value="Bintaro">Bintaro</option><option value="BSD">BSD</option><option value="Cawang">Cawang</option>
+      <option value="Cengkareng">Cengkareng</option><option value="Garut">Garut</option><option value="Jogja">Jogja</option>
+      <option value="Padang">Padang</option><option value="Pondok Gede">Pondok Gede</option><option value="Sibolga">Sibolga</option>
+      <option value="Cikarang">Cikarang</option><option value="Cileungsi">Cileungsi</option><option value="Jaksel">Jaksel</option><option value="Tele HO">Tele HO</option>
     </select>
-    <label>Bulan:</label>
-    <input type="month" id="filterBulan" class="border p-2" onchange="tampilkanData()">
+
+    <label>Filter Bulan:</label>
+    <input type="month" id="filterBulan" onchange="tampilkanData()">
+    <button onclick="downloadExcel()">⬇ Export Excel</button>
   </div>
 
-  <!-- Total Info -->
-  <div id="totalSummary" class="font-semibold mb-1"></div>
-  <div id="totalAllData" class="font-semibold mb-4 text-blue-600"></div>
+  <table id="tabelData">
+    <thead>
+      <tr><th>Tanggal</th><th>Cabang</th><th>Produk</th><th>Jumlah</th><th>Aksi</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
-  <!-- Table -->
-  <div class="overflow-x-auto">
-    <table id="tabelData" class="min-w-full border border-collapse text-center bg-white shadow rounded">
-      <thead class="bg-blue-100">
-        <tr><th>Tanggal</th><th>Cabang</th><th>Produk</th><th>Jumlah</th><th>Aksi</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
+  <canvas id="grafik" height="100"></canvas>
 
-  <!-- Ranking -->
-  <h3 class="text-xl font-bold mt-8 mb-2">🏆 Peringkat Pencapaian Target</h3>
-  <div class="overflow-x-auto">
-    <table id="tabelRingkasan" class="min-w-full border border-collapse text-center bg-white shadow rounded">
-      <thead class="bg-yellow-100">
-        <tr><th>Ranking</th><th>Cabang</th><th>Total</th><th>Target</th><th>Pencapaian (%)</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
+  <h3>🏆 Peringkat Pencapaian Target</h3>
+  <table id="tabelRingkasan">
+    <thead>
+      <tr><th>Ranking</th><th>Cabang</th><th>Total</th><th>Target</th><th>Pencapaian (%)</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
   <script>
-    // === Firebase Config Anda ===
+    // === Firebase Firestore setup ===
     const firebaseConfig = {
       apiKey: "API_KEY_ANDA",
-      authDomain: "project-id.firebaseapp.com",
-      projectId: "project-id",
-      storageBucket: "project-id.appspot.com",
-      messagingSenderId: "1234567890",
-      appId: "1:1234567890:web:abcdefgh"
+      authDomain: "PROYEK_ANDA.firebaseapp.com",
+      projectId: "PROYEK_ANDA",
+      storageBucket: "PROYEK_ANDA.appspot.com",
+      messagingSenderId: "SENDER_ID_ANDA",
+      appId: "APP_ID_ANDA"
     };
-    firebase.initializeApp(firebaseConfig);
+    const app = firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
+    let data = [], isAdmin = false, modeEdit = false, indexEdit = null;
+
     const targetPerCabang = {
-      "Bekasi 1": 55, "Bekasi 2": 55, "Bekasi 3": 55,
-      "Bintaro": 55, "BSD": 55, "Cawang": 55,
-      "Cengkareng": 55, "Garut": 55, "Jogja": 55,
-      "Padang": 55, "Pondok Gede": 55, "Sibolga": 55,
-      "Cikarang": 55, "Cileungsi": 55, "Jaksel": 55,
-      "Tele HO": 55
+      "Bekasi 1": 55, "Bekasi 2": 55, "Bekasi 3": 55, "Bintaro": 55,
+      "BSD": 55, "Cawang": 55, "Cengkareng": 55, "Garut": 55, "Jogja": 55,
+      "Padang": 55, "Pondok Gede": 55, "Sibolga": 55, "Cikarang": 55,
+      "Cileungsi": 55, "Jaksel": 55, "Tele HO": 55
     };
-    const produkList = ["KKB Mobil","KSM Motor","Multiguna"];
 
-    // Isi dropdown admin
-    Object.keys(targetPerCabang).forEach(c => {
-      let opt = document.createElement('option'); opt.value = opt.textContent = c;
-      document.getElementById('cabang').appendChild(opt);
-    });
-    produkList.forEach(p => {
-      let opt = document.createElement('option'); opt.value = opt.textContent = p;
-      document.getElementById('produk').appendChild(opt);
-    });
+    // Memuat data Firestore
+    async function loadData() {
+      data = [];
+      const snapshot = await db.collection('penjualan').get();
+      snapshot.forEach(doc => data.push({ id: doc.id, ...doc.data() }));
+      tampilkanData();
+    }
 
-    let data = [];
+    function tampilkanData() {
+      const tbody = document.querySelector("#tabelData tbody");
+      tbody.innerHTML = "";
 
-    async function tampilkanData() {
-      const filterCabang = document.getElementById('filterCabang').value;
-      const filterBulan = document.getElementById('filterBulan').value;
-      let query = db.collection('penjualan');
-      if (filterCabang) query = query.where('cabang','==',filterCabang);
+      const filterCabang = document.getElementById("filterCabang").value;
+      const filterBulan = document.getElementById("filterBulan").value;
 
-      const snapshot = await query.get();
-      data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       const filtered = data.filter(d =>
+        (!filterCabang || d.cabang === filterCabang) &&
         (!filterBulan || d.tanggal.startsWith(filterBulan))
       );
 
-      // tampil tabel
-      const tbody = document.querySelector('#tabelData tbody'); tbody.innerHTML = '';
-      let totalPenjualan = 0;
-      filtered.forEach(d => {
-        totalPenjualan += d.jumlah;
-        tbody.innerHTML += `<tr>
-          <td>${d.tanggal}</td><td>${d.cabang}</td><td>${d.produk}</td><td>${d.jumlah}</td>
-          <td><button class="text-red-500" onclick="hapusData('${d.id}')">🗑️</button></td>
-        </tr>`;
+      filtered.forEach((d, i) => {
+        const aksi = isAdmin
+          ? `<button onclick="editData(${i})">✏️</button><button onclick="hapusData(${i})">🗑️</button>` : '';
+        tbody.innerHTML += `<tr><td>${d.tanggal}</td><td>${d.cabang}</td><td>${d.produk}</td><td>${d.jumlah}</td><td>${aksi}</td></tr>`;
       });
 
-      document.getElementById('totalSummary').textContent = "Total Penjualan (Filter): " + totalPenjualan.toLocaleString();
-      const totalSemua = data.reduce((sum,d)=>sum+d.jumlah,0);
-      document.getElementById('totalAllData').textContent = "Total Keseluruhan Semua Cabang: " + totalSemua.toLocaleString();
-
+      updateChart(filtered);
       tampilkanRingkasan(filtered);
     }
 
     async function tambahData() {
-      const tanggal = document.getElementById('tanggal').value;
-      const cabang = document.getElementById('cabang').value;
-      const produk = document.getElementById('produk').value;
-      const jumlah = parseInt(document.getElementById('jumlah').value);
-      if (tanggal && cabang && produk && jumlah>0) {
-        await db.collection('penjualan').add({ tanggal, cabang, produk, jumlah });
-        alert('Data berhasil ditambahkan ✅');
-        document.getElementById('tanggal').value = '';
-        document.getElementById('jumlah').value = '';
-        tampilkanData();
+      const tanggal = document.getElementById("tanggal").value;
+      const cabang = document.getElementById("cabang").value;
+      const produk = document.getElementById("produk").value;
+      const jumlah = parseInt(document.getElementById("jumlah").value);
+      if (!tanggal || !cabang || !produk || isNaN(jumlah)) return alert('Mohon lengkapi semua data');
+
+      if (modeEdit) {
+        const id = data[indexEdit].id;
+        await db.collection('penjualan').doc(id).update({ tanggal, cabang, produk, jumlah });
+        alert('✅ Data berhasil diperbarui');
+        modeEdit = false; indexEdit = null;
       } else {
-        alert('Mohon lengkapi semua data.');
+        await db.collection('penjualan').add({ tanggal, cabang, produk, jumlah });
+        alert('✅ Data berhasil ditambahkan');
       }
+      loadData();
     }
 
-    async function hapusData(id) {
-      if (confirm('Yakin ingin menghapus data ini?')) {
-        await db.collection('penjualan').doc(id).delete();
-        tampilkanData();
-      }
+    function editData(index) {
+      const d = data[index];
+      document.getElementById("tanggal").value = d.tanggal;
+      document.getElementById("cabang").value = d.cabang;
+      document.getElementById("produk").value = d.produk;
+      document.getElementById("jumlah").value = d.jumlah;
+      modeEdit = true; indexEdit = index;
+      document.getElementById("tombolInput").textContent = "Update Data";
     }
 
-    function tampilkanRingkasan(filtered) {
-      const ringkasan = {};
-      filtered.forEach(d => ringkasan[d.cabang] = (ringkasan[d.cabang]||0)+d.jumlah);
+    async function hapusData(index) {
+      if (!confirm('Yakin ingin menghapus data ini?')) return;
+      await db.collection('penjualan').doc(data[index].id).delete();
+      loadData();
+    }
 
-      const hasil = Object.keys(ringkasan).map(c => {
-        const target = targetPerCabang[c]||0;
-        const persen = target ? (ringkasan[c]/target)*100 : 0;
-        return { cabang:c, total:ringkasan[c], target, persen };
-      }).sort((a,b)=>b.persen-a.persen);
+    function updateChart(filteredData) {
+      const totals = {};
+      filteredData.forEach(d => { totals[d.cabang] = (totals[d.cabang] || 0) + d.jumlah; });
 
-      const tbody = document.querySelector('#tabelRingkasan tbody'); tbody.innerHTML='';
-      hasil.forEach((h,i)=> {
-        tbody.innerHTML += `<tr>
-          <td>${i+1}</td><td>${h.cabang}</td><td>${h.total}</td><td>${h.target}</td><td>${h.persen.toFixed(2)}%</td>
-        </tr>`;
+      if (window.barChart) window.barChart.destroy();
+      const ctx = document.getElementById("grafik").getContext("2d");
+      window.barChart = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: Object.keys(totals),
+          datasets: [{ label: "Total Penjualan", data: Object.values(totals), backgroundColor: "rgba(54,162,235,0.6)" }]
+        }
       });
     }
 
-    // Password admin
-    document.addEventListener('keydown',e=>{
-      if(e.ctrlKey && e.shiftKey && e.key==='A'){
-        const pwd = prompt('Masukkan password admin:');
-        if(pwd==='aigolasecret'){
-          document.getElementById('adminForm').classList.remove('hidden');
-          alert('✅ Mode admin aktif');
-        } else { alert('❌ Password salah'); }
+    function tampilkanRingkasan(filteredData) {
+      const ringkasan = {};
+      filteredData.forEach(d => { ringkasan[d.cabang] = (ringkasan[d.cabang] || 0) + d.jumlah; });
+
+      const hasil = Object.entries(ringkasan).map(([cabang, total]) => {
+        const target = targetPerCabang[cabang] || 0;
+        return { cabang, total, target, persen: target ? ((total/target)*100).toFixed(1) : 0 };
+      }).sort((a,b) => b.persen - a.persen);
+
+      const tbody = document.querySelector("#tabelRingkasan tbody");
+      tbody.innerHTML = "";
+      hasil.forEach((item,i) => {
+        tbody.innerHTML += `<tr><td>${i+1}</td><td>${item.cabang}</td><td>${item.total}</td><td>${item.target}</td><td>${item.persen}%</td></tr>`;
+      });
+    }
+
+    function downloadExcel() {
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Penjualan");
+      XLSX.writeFile(wb, "data_penjualan.xlsx");
+    }
+
+    document.addEventListener("keydown", async e => {
+      if (e.ctrlKey && e.shiftKey && e.key === "A") {
+        const password = prompt('Masukkan password admin:');
+        if (password === "aigolasecret") {
+          isAdmin = true;
+          document.getElementById('adminForm').style.display = "block";
+          await loadData();
+          alert('✅ Mode Admin Aktif');
+        } else {
+          alert('❌ Password Salah');
+        }
       }
     });
 
-    tampilkanData();
+    // Populate options
+    const cabangs = Object.keys(targetPerCabang), produkList = ["KKB Mobil","KSM Motor","Multiguna"];
+    cabangs.forEach(c => { const opt=document.createElement('option'); opt.value=c; opt.textContent=c; document.getElementById('cabang').appendChild(opt); });
+    produkList.forEach(p => { const opt=document.createElement('option'); opt.value=p; opt.textContent=p; document.getElementById('produk').appendChild(opt); });
+
+    // Load data awal
+    loadData();
   </script>
 </body>
 </html>
