@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -87,7 +88,6 @@
   </table>
 
   <script>
-    // Konfigurasi Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyD4QOozwVZ5Ae47LrbN8NSMeYBT1roWcH0",
       authDomain: "report-sales-aigolaii.firebaseapp.com",
@@ -165,7 +165,10 @@
     function updateChart(filteredData) {
       const totals = {};
       filteredData.forEach(d => {
-        totals[d.cabang] = (totals[d.cabang] || 0) + parseInt(d.jumlah);
+        let poin = d.produk === "Mobil"
+          ? Math.floor(parseInt(d.jumlah) / 12500000)
+          : parseInt(d.jumlah);
+        totals[d.cabang] = (totals[d.cabang] || 0) + poin;
       });
 
       const labels = Object.keys(totals);
@@ -178,7 +181,7 @@
         data: {
           labels: labels,
           datasets: [{
-            label: "Total Penjualan",
+            label: "Total Poin Sales",
             data: values,
             backgroundColor: "rgba(54, 162, 235, 0.6)"
           }]
@@ -189,7 +192,10 @@
     function tampilkanRingkasan(filteredData) {
       const ringkasan = {};
       filteredData.forEach(d => {
-        ringkasan[d.cabang] = (ringkasan[d.cabang] || 0) + parseInt(d.jumlah);
+        let poin = d.produk === "Mobil"
+          ? Math.floor(parseInt(d.jumlah) / 12500000)
+          : parseInt(d.jumlah);
+        ringkasan[d.cabang] = (ringkasan[d.cabang] || 0) + poin;
       });
 
       const hasil = Object.entries(ringkasan).map(([cabang, total]) => {
@@ -221,7 +227,6 @@
       XLSX.writeFile(wb, "data_penjualan.xlsx");
     }
 
-    // Mode Admin (Ctrl+Shift+A)
     document.addEventListener("keydown", function(e) {
       if (e.ctrlKey && e.shiftKey && e.key === "A") {
         const password = prompt("Masukkan password admin:");
@@ -234,9 +239,8 @@
       }
     });
 
-    // Isi dropdown cabang dan produk
     const cabangs = Object.keys(targetPerCabang);
-    const produkList = ["KKB Mobil", "KSM Motor", "Multiguna"];
+    const produkList = ["Motor", "Mobil"];
     cabangs.forEach(c => {
       const opt = document.createElement("option");
       opt.value = opt.textContent = c;
