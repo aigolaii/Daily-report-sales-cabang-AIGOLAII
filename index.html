@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -21,7 +20,7 @@
   </style>
 </head>
 <body>
-  <h2>📊 Sales Cabang AIGOLAII (Realtime - Firebase)</h2>
+  <h2>📊 Sales Cabang AIGOLAII (Realtime)</h2>
 
   <div id="adminForm" style="display:none;">
     <input type="date" id="tanggal">
@@ -86,6 +85,9 @@
     </thead>
     <tbody></tbody>
   </table>
+
+  <!-- Tambahan: Ringkasan Total -->
+  <div id="totalRingkasan" style="margin-top: 20px; font-weight: bold;"></div>
 
   <script>
     const firebaseConfig = {
@@ -218,6 +220,17 @@
         </tr>`;
         tbody.innerHTML += row;
       });
+
+      // Tambahan total seluruh cabang
+      const totalPoin = hasil.reduce((sum, item) => sum + item.total, 0);
+      const totalTarget = hasil.reduce((sum, item) => sum + item.target, 0);
+      const totalPersen = totalTarget ? ((totalPoin / totalTarget) * 100).toFixed(1) : 0;
+
+      document.getElementById("totalRingkasan").innerHTML = `
+        🔢 Total Poin Seluruh Cabang: ${totalPoin}<br/>
+        🎯 Total Target Gabungan: ${totalTarget}<br/>
+        📈 Persentase Pencapaian Gabungan: ${totalPersen}%
+      `;
     }
 
     function downloadExcel() {
