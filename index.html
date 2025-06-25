@@ -1,14 +1,295 @@
 <!DOCTYPE html>
+
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Sales Cabang AIGOLAII</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Sales Cabang AIGOLAII</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js">
+function tampilkanGrafikBulanan() {
+  const bulanan = {};
+  data.forEach(d => {
+    const bulan = new Date(d.tanggal).getMonth();
+    const cabang = d.cabang;
+    let poin = d.produk === "Mobil"
+      ? Math.floor(parseInt(d.jumlah) / 12500000)
+      : parseInt(d.jumlah);
+
+    if (!bulanan[cabang]) bulanan[cabang] = Array(12).fill(0);
+    bulanan[cabang][bulan] += poin;
+  });
+
+  const tbody = document.querySelector("#tabelBulanan tbody");
+  tbody.innerHTML = "";
+  Object.entries(bulanan).forEach(([cabang, values]) => {
+    const row = `<tr><td>${cabang}</td>` + values.map(v => `<td>${v}</td>`).join("") + "</tr>";
+    tbody.innerHTML += row;
+  });
+
+  const ctx = document.getElementById("grafikBulanan").getContext("2d");
+  if (window.lineChart) window.lineChart.destroy();
+  window.lineChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"],
+      datasets: Object.entries(bulanan).map(([cabang, data], idx) => ({
+        label: cabang,
+        data,
+        borderColor: `hsl(${idx * 23}, 70%, 50%)`,
+        fill: false
+      }))
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: true },
+        title: { display: true, text: "Pergerakan Penjualan Bulanan per Cabang" }
+      }
+    }
+  });
+}
+
+
+function tambahDataBulanan() {
+  const bulan = document.getElementById("bulanInput").value;
+  const cabang = document.getElementById("bulanCabang").value;
+  const produk = document.getElementById("bulanProduk").value;
+  const jumlah = parseInt(document.getElementById("bulanJumlah").value);
+  const tahun = new Date().getFullYear();
+  const tanggal = `${tahun}-${bulan}-01`;
+
+  if (bulan && cabang && produk && jumlah) {
+    db.ref("penjualan").push({ tanggal, cabang, produk, jumlah });
+    alert("✅ Data bulanan berhasil ditambahkan!");
+  } else {
+    alert("⚠️ Lengkapi semua field input bulanan!");
+  }
+}
+
+
+// Tambahkan opsi cabang ke dropdown bulanCabang
+const bulanCabang = document.getElementById("bulanCabang");
+cabangs.forEach(c => {
+  const opt = document.createElement("option");
+  opt.value = opt.textContent = c;
+  bulanCabang.appendChild(opt);
+});
+
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js">
+function tampilkanGrafikBulanan() {
+  const bulanan = {};
+  data.forEach(d => {
+    const bulan = new Date(d.tanggal).getMonth();
+    const cabang = d.cabang;
+    let poin = d.produk === "Mobil"
+      ? Math.floor(parseInt(d.jumlah) / 12500000)
+      : parseInt(d.jumlah);
+
+    if (!bulanan[cabang]) bulanan[cabang] = Array(12).fill(0);
+    bulanan[cabang][bulan] += poin;
+  });
+
+  const tbody = document.querySelector("#tabelBulanan tbody");
+  tbody.innerHTML = "";
+  Object.entries(bulanan).forEach(([cabang, values]) => {
+    const row = `<tr><td>${cabang}</td>` + values.map(v => `<td>${v}</td>`).join("") + "</tr>";
+    tbody.innerHTML += row;
+  });
+
+  const ctx = document.getElementById("grafikBulanan").getContext("2d");
+  if (window.lineChart) window.lineChart.destroy();
+  window.lineChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"],
+      datasets: Object.entries(bulanan).map(([cabang, data], idx) => ({
+        label: cabang,
+        data,
+        borderColor: `hsl(${idx * 23}, 70%, 50%)`,
+        fill: false
+      }))
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: true },
+        title: { display: true, text: "Pergerakan Penjualan Bulanan per Cabang" }
+      }
+    }
+  });
+}
+
+
+function tambahDataBulanan() {
+  const bulan = document.getElementById("bulanInput").value;
+  const cabang = document.getElementById("bulanCabang").value;
+  const produk = document.getElementById("bulanProduk").value;
+  const jumlah = parseInt(document.getElementById("bulanJumlah").value);
+  const tahun = new Date().getFullYear();
+  const tanggal = `${tahun}-${bulan}-01`;
+
+  if (bulan && cabang && produk && jumlah) {
+    db.ref("penjualan").push({ tanggal, cabang, produk, jumlah });
+    alert("✅ Data bulanan berhasil ditambahkan!");
+  } else {
+    alert("⚠️ Lengkapi semua field input bulanan!");
+  }
+}
+
+
+// Tambahkan opsi cabang ke dropdown bulanCabang
+const bulanCabang = document.getElementById("bulanCabang");
+cabangs.forEach(c => {
+  const opt = document.createElement("option");
+  opt.value = opt.textContent = c;
+  bulanCabang.appendChild(opt);
+});
+
+</script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js">
+function tampilkanGrafikBulanan() {
+  const bulanan = {};
+  data.forEach(d => {
+    const bulan = new Date(d.tanggal).getMonth();
+    const cabang = d.cabang;
+    let poin = d.produk === "Mobil"
+      ? Math.floor(parseInt(d.jumlah) / 12500000)
+      : parseInt(d.jumlah);
+
+    if (!bulanan[cabang]) bulanan[cabang] = Array(12).fill(0);
+    bulanan[cabang][bulan] += poin;
+  });
+
+  const tbody = document.querySelector("#tabelBulanan tbody");
+  tbody.innerHTML = "";
+  Object.entries(bulanan).forEach(([cabang, values]) => {
+    const row = `<tr><td>${cabang}</td>` + values.map(v => `<td>${v}</td>`).join("") + "</tr>";
+    tbody.innerHTML += row;
+  });
+
+  const ctx = document.getElementById("grafikBulanan").getContext("2d");
+  if (window.lineChart) window.lineChart.destroy();
+  window.lineChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"],
+      datasets: Object.entries(bulanan).map(([cabang, data], idx) => ({
+        label: cabang,
+        data,
+        borderColor: `hsl(${idx * 23}, 70%, 50%)`,
+        fill: false
+      }))
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: true },
+        title: { display: true, text: "Pergerakan Penjualan Bulanan per Cabang" }
+      }
+    }
+  });
+}
+
+
+function tambahDataBulanan() {
+  const bulan = document.getElementById("bulanInput").value;
+  const cabang = document.getElementById("bulanCabang").value;
+  const produk = document.getElementById("bulanProduk").value;
+  const jumlah = parseInt(document.getElementById("bulanJumlah").value);
+  const tahun = new Date().getFullYear();
+  const tanggal = `${tahun}-${bulan}-01`;
+
+  if (bulan && cabang && produk && jumlah) {
+    db.ref("penjualan").push({ tanggal, cabang, produk, jumlah });
+    alert("✅ Data bulanan berhasil ditambahkan!");
+  } else {
+    alert("⚠️ Lengkapi semua field input bulanan!");
+  }
+}
+
+
+// Tambahkan opsi cabang ke dropdown bulanCabang
+const bulanCabang = document.getElementById("bulanCabang");
+cabangs.forEach(c => {
+  const opt = document.createElement("option");
+  opt.value = opt.textContent = c;
+  bulanCabang.appendChild(opt);
+});
+
+</script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js">
+function tampilkanGrafikBulanan() {
+  const bulanan = {};
+  data.forEach(d => {
+    const bulan = new Date(d.tanggal).getMonth();
+    const cabang = d.cabang;
+    let poin = d.produk === "Mobil"
+      ? Math.floor(parseInt(d.jumlah) / 12500000)
+      : parseInt(d.jumlah);
+
+    if (!bulanan[cabang]) bulanan[cabang] = Array(12).fill(0);
+    bulanan[cabang][bulan] += poin;
+  });
+
+  const tbody = document.querySelector("#tabelBulanan tbody");
+  tbody.innerHTML = "";
+  Object.entries(bulanan).forEach(([cabang, values]) => {
+    const row = `<tr><td>${cabang}</td>` + values.map(v => `<td>${v}</td>`).join("") + "</tr>";
+    tbody.innerHTML += row;
+  });
+
+  const ctx = document.getElementById("grafikBulanan").getContext("2d");
+  if (window.lineChart) window.lineChart.destroy();
+  window.lineChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"],
+      datasets: Object.entries(bulanan).map(([cabang, data], idx) => ({
+        label: cabang,
+        data,
+        borderColor: `hsl(${idx * 23}, 70%, 50%)`,
+        fill: false
+      }))
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: true },
+        title: { display: true, text: "Pergerakan Penjualan Bulanan per Cabang" }
+      }
+    }
+  });
+}
+
+
+function tambahDataBulanan() {
+  const bulan = document.getElementById("bulanInput").value;
+  const cabang = document.getElementById("bulanCabang").value;
+  const produk = document.getElementById("bulanProduk").value;
+  const jumlah = parseInt(document.getElementById("bulanJumlah").value);
+  const tahun = new Date().getFullYear();
+  const tanggal = `${tahun}-${bulan}-01`;
+
+  if (bulan && cabang && produk && jumlah) {
+    db.ref("penjualan").push({ tanggal, cabang, produk, jumlah });
+    alert("✅ Data bulanan berhasil ditambahkan!");
+  } else {
+    alert("⚠️ Lengkapi semua field input bulanan!");
+  }
+}
+
+
+// Tambahkan opsi cabang ke dropdown bulanCabang
+const bulanCabang = document.getElementById("bulanCabang");
+cabangs.forEach(c => {
+  const opt = document.createElement("option");
+  opt.value = opt.textContent = c;
+  bulanCabang.appendChild(opt);
+});
+
+</script>
+<style>
     body { font-family: sans-serif; margin: 20px; }
     input, select, button { margin: 5px; padding: 5px; }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; }
@@ -20,76 +301,74 @@
   </style>
 </head>
 <body>
-  <h2>📊 Sales Cabang AIGOLAII (Realtime)</h2>
+<h2>📊 Sales Cabang AIGOLAII (Realtime)</h2>
+<h3>🏆 Peringkat Pencapaian Target</h3><table id="tabelRingkasan">
+<thead>
+<tr>
+<th>Ranking</th>
+<th>Cabang</th>
+<th>Total</th>
+<th>Target</th>
+<th>Pencapaian (%)</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table><div id="totalRingkasan" style="margin-top: 20px; font-weight: bold;"></div>
+<div class="filter-bar">
+<label>Filter Cabang:</label>
+<select id="filterCabang" onchange="tampilkanData()">
+<option value="">Semua</option>
+<option value="Bekasi 1">Bekasi 1</option>
+<option value="Bekasi 2">Bekasi 2</option>
+<option value="Bekasi 3">Bekasi 3</option>
+<option value="Bintaro">Bintaro</option>
+<option value="BSD">BSD</option>
+<option value="Cawang">Cawang</option>
+<option value="Cengkareng">Cengkareng</option>
+<option value="Garut">Garut</option>
+<option value="Jogja">Jogja</option>
+<option value="Padang">Padang</option>
+<option value="Pondok Gede">Pondok Gede</option>
+<option value="Sibolga">Sibolga</option>
+<option value="Cikarang">Cikarang</option>
+<option value="Cileungsi">Cileungsi</option>
+<option value="Jaksel">Jaksel</option>
+<option value="Tele HO">Tele HO</option>
+</select>
+<label>Filter Bulan:</label>
+<input id="filterBulan" onchange="tampilkanData()" type="month"/>
+<button onclick="downloadExcel()">⬇ Export Excel</button>
+</div>
+<div id="dataSection" style="display:none;"><table id="tabelData">
+<thead>
+<tr>
+<th>Tanggal</th>
+<th>Cabang</th>
+<th>Produk</th>
+<th>Jumlah</th>
+<th>Aksi</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table></div>
+<canvas height="100" id="grafik"></canvas>
+<h3>📅 Rekap Penjualan Gabungan per Bulan</h3>
+<table id="tabelBulanan">
+<thead>
+<tr>
+<th>Cabang</th>
+<th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th><th>Mei</th><th>Jun</th>
+<th>Jul</th><th>Agu</th><th>Sep</th><th>Okt</th><th>Nov</th><th>Des</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+<canvas height="100" id="grafikBulanan"></canvas>
 
-  <div id="adminForm" style="display:none;">
-    <input type="date" id="tanggal">
-    <select id="cabang"></select>
-    <select id="produk"></select>
-    <input type="number" id="jumlah" placeholder="Jumlah">
-    <button onclick="tambahData()">Tambah Data</button>
-  </div>
 
-  <div class="filter-bar">
-    <label>Filter Cabang:</label>
-    <select id="filterCabang" onchange="tampilkanData()">
-      <option value="">Semua</option>
-      <option value="Bekasi 1">Bekasi 1</option>
-      <option value="Bekasi 2">Bekasi 2</option>
-      <option value="Bekasi 3">Bekasi 3</option>
-      <option value="Bintaro">Bintaro</option>
-      <option value="BSD">BSD</option>
-      <option value="Cawang">Cawang</option>
-      <option value="Cengkareng">Cengkareng</option>
-      <option value="Garut">Garut</option>
-      <option value="Jogja">Jogja</option>
-      <option value="Padang">Padang</option>
-      <option value="Pondok Gede">Pondok Gede</option>
-      <option value="Sibolga">Sibolga</option>
-      <option value="Cikarang">Cikarang</option>
-      <option value="Cileungsi">Cileungsi</option>
-      <option value="Jaksel">Jaksel</option>
-      <option value="Tele HO">Tele HO</option>
-    </select>
+<!-- Tambahan: Ringkasan Total -->
 
-    <label>Filter Bulan:</label>
-    <input type="month" id="filterBulan" onchange="tampilkanData()">
-    <button onclick="downloadExcel()">⬇ Export Excel</button>
-  </div>
-
-  <table id="tabelData">
-    <thead>
-      <tr>
-        <th>Tanggal</th>
-        <th>Cabang</th>
-        <th>Produk</th>
-        <th>Jumlah</th>
-        <th>Aksi</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-  <canvas id="grafik" height="100"></canvas>
-
-  <h3>🏆 Peringkat Pencapaian Target</h3>
-  <table id="tabelRingkasan">
-    <thead>
-      <tr>
-        <th>Ranking</th>
-        <th>Cabang</th>
-        <th>Total</th>
-        <th>Target</th>
-        <th>Pencapaian (%)</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-  <!-- Tambahan: Ringkasan Total -->
-  <div id="totalRingkasan" style="margin-top: 20px; font-weight: bold;"></div>
-
-  <script>
+<script>
     const firebaseConfig = {
       apiKey: "AIzaSyD4QOozwVZ5Ae47LrbN8NSMeYBT1roWcH0",
       authDomain: "report-sales-aigolaii.firebaseapp.com",
@@ -118,6 +397,7 @@
       const raw = snapshot.val() || {};
       data = Object.entries(raw).map(([id, d]) => ({ ...d, id }));
       tampilkanData();
+  tampilkanGrafikBulanan();
     });
 
     function tampilkanData() {
@@ -244,7 +524,9 @@
       if (e.ctrlKey && e.shiftKey && e.key === "A") {
         const password = prompt("Masukkan password admin:");
         if (password === "aigolasecret") {
+          document.getElementById("dataSection").style.display = "block";
           document.getElementById("adminForm").style.display = "block";
+document.getElementById("adminMonthlyForm").style.display = "block";
           alert("✅ Mode Admin Aktif");
         } else {
           alert("❌ Password Salah!");
@@ -264,6 +546,107 @@
       opt.value = opt.textContent = p;
       document.getElementById("produk").appendChild(opt);
     });
-  </script>
-</body>
+  
+function tampilkanGrafikBulanan() {
+  const bulanan = {};
+  data.forEach(d => {
+    const bulan = new Date(d.tanggal).getMonth();
+    const cabang = d.cabang;
+    let poin = d.produk === "Mobil"
+      ? Math.floor(parseInt(d.jumlah) / 12500000)
+      : parseInt(d.jumlah);
+
+    if (!bulanan[cabang]) bulanan[cabang] = Array(12).fill(0);
+    bulanan[cabang][bulan] += poin;
+  });
+
+  const tbody = document.querySelector("#tabelBulanan tbody");
+  tbody.innerHTML = "";
+  Object.entries(bulanan).forEach(([cabang, values]) => {
+    const row = `<tr><td>${cabang}</td>` + values.map(v => `<td>${v}</td>`).join("") + "</tr>";
+    tbody.innerHTML += row;
+  });
+
+  const ctx = document.getElementById("grafikBulanan").getContext("2d");
+  if (window.lineChart) window.lineChart.destroy();
+  window.lineChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"],
+      datasets: Object.entries(bulanan).map(([cabang, data], idx) => ({
+        label: cabang,
+        data,
+        borderColor: `hsl(${idx * 23}, 70%, 50%)`,
+        fill: false
+      }))
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: true },
+        title: { display: true, text: "Pergerakan Penjualan Bulanan per Cabang" }
+      }
+    }
+  });
+}
+
+
+function tambahDataBulanan() {
+  const bulan = document.getElementById("bulanInput").value;
+  const cabang = document.getElementById("bulanCabang").value;
+  const produk = document.getElementById("bulanProduk").value;
+  const jumlah = parseInt(document.getElementById("bulanJumlah").value);
+  const tahun = new Date().getFullYear();
+  const tanggal = `${tahun}-${bulan}-01`;
+
+  if (bulan && cabang && produk && jumlah) {
+    db.ref("penjualan").push({ tanggal, cabang, produk, jumlah });
+    alert("✅ Data bulanan berhasil ditambahkan!");
+  } else {
+    alert("⚠️ Lengkapi semua field input bulanan!");
+  }
+}
+
+
+// Tambahkan opsi cabang ke dropdown bulanCabang
+const bulanCabang = document.getElementById("bulanCabang");
+cabangs.forEach(c => {
+  const opt = document.createElement("option");
+  opt.value = opt.textContent = c;
+  bulanCabang.appendChild(opt);
+});
+
+</script>
+<div id="adminForm" style="display:none;">
+<div id="adminMonthlyForm" style="display:none; margin-top: 30px;">
+<h3>📝 Input Data Bulanan (Admin)</h3>
+<select id="bulanInput">
+<option value="">Pilih Bulan</option>
+<option value="01">Januari</option>
+<option value="02">Februari</option>
+<option value="03">Maret</option>
+<option value="04">April</option>
+<option value="05">Mei</option>
+<option value="06">Juni</option>
+<option value="07">Juli</option>
+<option value="08">Agustus</option>
+<option value="09">September</option>
+<option value="10">Oktober</option>
+<option value="11">November</option>
+<option value="12">Desember</option>
+</select>
+<select id="bulanCabang"></select>
+<select id="bulanProduk">
+<option value="Motor">Motor</option>
+<option value="Mobil">Mobil</option>
+</select>
+<input id="bulanJumlah" placeholder="Jumlah" type="number"/>
+<button onclick="tambahDataBulanan()">Tambah Data Bulanan</button>
+</div>
+<input id="tanggal" type="date"/>
+<select id="cabang"></select>
+<select id="produk"></select>
+<input id="jumlah" placeholder="Jumlah" type="number"/>
+<button onclick="tambahData()">Tambah Data</button>
+</div></body>
 </html>
